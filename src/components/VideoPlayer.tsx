@@ -1,8 +1,9 @@
 
 import { useRef, useEffect, useState } from "react";
-import { Reel } from "../types/reels";
-import { X, Play, Pause, Volume2, VolumeX, Heart, Share2 } from "lucide-react";
+import { Reel, ReelSource, InstagramReel } from "../types/reels";
+import { X, Play, Pause, Volume2, VolumeX, Heart, Share2, Instagram } from "lucide-react";
 import { formatCompactNumber } from "../utils/formatNumber";
+import InstagramEmbed from "./InstagramEmbed";
 
 interface VideoPlayerProps {
   reel: Reel;
@@ -14,8 +15,12 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const isInstagramReel = 'source' in reel && reel.source === ReelSource.INSTAGRAM;
 
   useEffect(() => {
+    if (isInstagramReel) return;
+    
     const video = videoRef.current;
     if (!video) return;
 
@@ -36,10 +41,10 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
       video.removeEventListener("playing", () => setIsPlaying(true));
       video.removeEventListener("pause", () => setIsPlaying(false));
     };
-  }, [reel]);
+  }, [reel, isInstagramReel]);
 
   const togglePlay = () => {
-    if (!videoRef.current) return;
+    if (isInstagramReel || !videoRef.current) return;
     
     if (isPlaying) {
       videoRef.current.pause();
@@ -51,7 +56,7 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
+    if (isInstagramReel || !videoRef.current) return;
     
     videoRef.current.muted = !isMuted;
     setIsMuted(!isMuted);
@@ -77,20 +82,29 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
         </button>
         
         <div className="video-container rounded-lg overflow-hidden">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full bg-instagram-gradient animate-pulse-slow"></div>
-            </div>
+          {isInstagramReel ? (
+            <InstagramEmbed 
+              reel={reel as InstagramReel} 
+              onLoad={() => setIsLoading(false)} 
+            />
+          ) : (
+            <>
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-instagram-gradient animate-pulse-slow"></div>
+                </div>
+              )}
+              
+              <video
+                ref={videoRef}
+                src={reel.videoUrl}
+                loop
+                playsInline
+                muted={isMuted}
+                className="w-full h-full object-contain"
+              />
+            </>
           )}
-          
-          <video
-            ref={videoRef}
-            src={reel.videoUrl}
-            loop
-            playsInline
-            muted={isMuted}
-            className="w-full h-full object-contain"
-          />
         </div>
         
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
@@ -100,23 +114,28 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
                 <span className="text-xs font-bold text-white">{reel.username.charAt(0).toUpperCase()}</span>
               </div>
               <span className="text-white font-medium">{reel.username}</span>
+              {isInstagramReel && (
+                <Instagram size={16} className="text-white ml-2" />
+              )}
             </div>
             
-            <div className="flex space-x-4">
-              <button 
-                className="text-white bg-black bg-opacity-50 rounded-full p-2"
-                onClick={togglePlay}
-              >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-              </button>
-              
-              <button 
-                className="text-white bg-black bg-opacity-50 rounded-full p-2"
-                onClick={toggleMute}
-              >
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-              </button>
-            </div>
+            {!isInstagramReel && (
+              <div className="flex space-x-4">
+                <button 
+                  className="text-white bg-black bg-opacity-50 rounded-full p-2"
+                  onClick={togglePlay}
+                >
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                </button>
+                
+                <button 
+                  className="text-white bg-black bg-opacity-50 rounded-full p-2"
+                  onClick={toggleMute}
+                >
+                  {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+              </div>
+            )}
           </div>
           
           <p className="text-white text-sm mb-2">{reel.caption}</p>

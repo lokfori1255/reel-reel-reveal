@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { Reel } from "../types/reels";
-import { Play, Heart, Eye } from "lucide-react";
+import { Reel, ReelSource } from "../types/reels";
+import { Play, Heart, Eye, Instagram } from "lucide-react";
 import { formatCompactNumber } from "../utils/formatNumber";
 
 interface ReelCardProps {
@@ -11,6 +11,7 @@ interface ReelCardProps {
 
 const ReelCard = ({ reel, onClick }: ReelCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
+  const isInstagramReel = 'source' in reel && reel.source === ReelSource.INSTAGRAM;
 
   return (
     <div 
@@ -35,6 +36,9 @@ const ReelCard = ({ reel, onClick }: ReelCardProps) => {
               <span className="text-xs font-bold text-white">{reel.username.charAt(0).toUpperCase()}</span>
             </div>
             <span className="text-white font-medium truncate">{reel.username}</span>
+            {isInstagramReel && (
+              <Instagram size={16} className="text-white ml-auto" />
+            )}
           </div>
           
           <div>
