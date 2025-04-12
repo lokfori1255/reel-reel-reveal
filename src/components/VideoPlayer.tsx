@@ -1,9 +1,11 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Reel, ReelSource, InstagramReel } from "../types/reels";
-import { X, Play, Pause, Volume2, VolumeX, Heart, Share2, Instagram } from "lucide-react";
+import { X, Play, Pause, Volume2, VolumeX, Heart, Share2, Instagram, Download } from "lucide-react";
 import { formatCompactNumber } from "../utils/formatNumber";
 import InstagramEmbed from "./InstagramEmbed";
+import { Button } from "./ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoPlayerProps {
   reel: Reel;
@@ -15,6 +17,8 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const { toast } = useToast();
   
   const isInstagramReel = 'source' in reel && reel.source === ReelSource.INSTAGRAM;
 
@@ -66,6 +70,66 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    if (!isLiked) {
+      toast({
+        title: "Liked!",
+        description: `You liked @${reel.username}'s reel`,
+      });
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share && !isInstagramReel) {
+      navigator.share({
+        title: `Reel by ${reel.username}`,
+        text: reel.caption,
+        url: window.location.href,
+      }).catch((error) => {
+        console.error("Error sharing:", error);
+        copyToClipboard();
+      });
+    } else if (isInstagramReel) {
+      // For Instagram reels, open the Instagram URL
+      window.open((reel as InstagramReel).instagramUrl, "_blank");
+    } else {
+      copyToClipboard();
+    }
+  };
+  
+  const copyToClipboard = () => {
+    const shareText = `Check out this reel by ${reel.username}: ${reel.caption}`;
+    navigator.clipboard.writeText(shareText);
+    toast({
+      title: "Link copied!",
+      description: "Reel link copied to clipboard",
+    });
+  };
+
+  const handleDownload = () => {
+    if (isInstagramReel) {
+      toast({
+        title: "Instagram Reel",
+        description: "Visit Instagram to download this reel",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const a = document.createElement("a");
+    a.href = reel.videoUrl;
+    a.download = `reel-${reel.id}.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Download started",
+      description: "Reel is being downloaded",
+    });
   };
 
   return (
@@ -140,15 +204,36 @@ const VideoPlayer = ({ reel, onClose }: VideoPlayerProps) => {
           
           <p className="text-white text-sm mb-2">{reel.caption}</p>
           
-          <div className="flex justify-between text-white text-xs">
-            <div className="flex items-center space-x-1">
-              <Heart size={16} className="text-instagram-red" />
-              <span>{formatCompactNumber(reel.likes)}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Share2 size={16} />
+          <div className="flex justify-between text-white mt-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLike} 
+              className={`text-white hover:bg-white/10 ${isLiked ? 'text-instagram-red' : ''}`}
+            >
+              <Heart size={20} className={isLiked ? "fill-instagram-red text-instagram-red" : ""} />
+              <span>{formatCompactNumber(isLiked ? reel.likes + 1 : reel.likes)}</span>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleShare}
+              className="text-white hover:bg-white/10"
+            >
+              <Share2 size={20} />
               <span>Share</span>
-            </div>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleDownload}
+              className="text-white hover:bg-white/10"
+            >
+              <Download size={20} />
+              <span>Download</span>
+            </Button>
           </div>
         </div>
       </div>

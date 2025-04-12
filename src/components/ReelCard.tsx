@@ -7,15 +7,16 @@ import { formatCompactNumber } from "../utils/formatNumber";
 interface ReelCardProps {
   reel: Reel;
   onClick: () => void;
+  isRecommended?: boolean;
 }
 
-const ReelCard = ({ reel, onClick }: ReelCardProps) => {
+const ReelCard = ({ reel, onClick, isRecommended = false }: ReelCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const isInstagramReel = 'source' in reel && reel.source === ReelSource.INSTAGRAM;
 
   return (
     <div 
-      className="reel-card relative rounded-md overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+      className={`reel-card relative rounded-md overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg ${isRecommended ? 'border-2 border-instagram-pink' : ''}`}
       onClick={onClick}
     >
       <div className="aspect-square bg-secondary relative">
@@ -30,6 +31,16 @@ const ReelCard = ({ reel, onClick }: ReelCardProps) => {
           className="w-full h-full object-cover"
           onLoad={() => setIsLoading(false)}
         />
+        {isRecommended && (
+          <div className="absolute top-2 left-2 bg-instagram-pink px-2 py-0.5 rounded-full text-white text-xs font-medium">
+            Recommended
+          </div>
+        )}
+        {isInstagramReel && (
+          <div className="absolute top-2 right-2 bg-black bg-opacity-70 p-1 rounded-md">
+            <Instagram size={16} className="text-white" />
+          </div>
+        )}
         <div className="reel-overlay absolute inset-0 bg-black bg-opacity-50 opacity-0 transition-opacity duration-200 flex flex-col justify-between p-3">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full bg-instagram-gradient flex items-center justify-center">
